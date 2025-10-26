@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字轉語音 - TTS Reader</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎤 文字轉語音</h1>
+            <p>將您的文字轉換為自然語音</p>
+        </header>
+
+        <main>
+            <!-- 文字輸入區域 -->
+            <div class="input-section">
+                <label for="textInput">輸入要轉換的文字：</label>
+                <textarea 
+                    id="textInput" 
+                    placeholder="請在此輸入或貼上您要轉換為語音的文字..."
+                    rows="8"
+                ></textarea>
+            </div>
+
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <div class="main-controls">
+                    <button id="playBtn" class="btn btn-primary">
+                        <span class="btn-icon">▶️</span>
+                        播放
+                    </button>
+                    <button id="pauseBtn" class="btn btn-secondary" disabled>
+                        <span class="btn-icon">⏸️</span>
+                        暫停
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>
+                        <span class="btn-icon">⏹️</span>
+                        停止
+                    </button>
+                </div>
+
+                <div class="settings">
+                    <div class="setting-group">
+                        <label for="rateSlider">語速：</label>
+                        <input type="range" id="rateSlider" min="0.5" max="2" step="0.1" value="1">
+                        <span id="rateValue">1.0x</span>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label for="volumeSlider">音量：</label>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+                        <span id="volumeValue">100%</span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="voiceSelect">語音：</label>
+                        <select id="voiceSelect">
+                            <option value="">系統預設</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 進度顯示 -->
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div id="progressBar" class="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="currentTime">00:00</span> / <span id="totalTime">00:00</span>
+                </div>
+            </div>
+
+            <!-- 狀態顯示 -->
+            <div id="statusMessage" class="status-message"></div>
+        </main>
+
+        <footer>
+            <p>使用瀏覽器內建的語音合成技術</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
