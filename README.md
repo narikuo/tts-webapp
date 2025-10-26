@@ -2,6 +2,9 @@
 
 一個純前端的文字轉語音（TTS）網頁應用，使用瀏覽器內建的 Web Speech API 技術。
 
+## Text-to-Speech (TTS) Application
+ - URL: https://narikuo.github.io/tts-webapp/
+
 ## ✨ 功能特色
 
 ### 🔴 核心功能（MVP）
