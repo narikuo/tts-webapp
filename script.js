@@ -1,6 +1,66 @@
+const translations = {
+    'en': {
+        pageTitle: 'Text to Speech - TTS Reader',
+        headerTitle: '🎤 Text to Speech',
+        headerSubtitle: 'Convert your text into natural-sounding speech',
+        textInputLabel: 'Enter text to convert:',
+        textInputPlaceholder: 'Enter or paste the text you want to convert to speech here...',
+        playBtn: 'Play',
+        resumeBtn: 'Resume',
+        pauseBtn: 'Pause',
+        stopBtn: 'Stop',
+        rateLabel: 'Rate:',
+        volumeLabel: 'Volume:',
+        voiceLabel: 'Voice:',
+        voiceDefault: 'System Default',
+        languageLabel: 'Language:',
+        footerText: "This app uses the browser's built-in text-to-speech technology",
+        status_welcome: 'Welcome! Please input some text to get started.',
+        status_empty_text: 'Please enter some text to convert.',
+        status_resumed: 'Resuming playback.',
+        status_playing: 'Playback started.',
+        status_finished: 'Playback finished.',
+        status_error: 'An error occurred during playback: {error}',
+        status_paused: 'Playback paused.',
+        status_stopped: 'Playback stopped.',
+        status_unsupported: 'Your browser does not support speech synthesis. Please use a newer browser.'
+    },
+    'zh-TW': {
+        pageTitle: '文字轉語音 - TTS Reader',
+        headerTitle: '🎤 文字轉語音',
+        headerSubtitle: '將您的文字轉換為自然語音',
+        textInputLabel: '輸入要轉換的文字：',
+        textInputPlaceholder: '請在此輸入或貼上您要轉換為語音的文字...',
+        playBtn: '播放',
+        resumeBtn: '繼續',
+        pauseBtn: '暫停',
+        stopBtn: '停止',
+        rateLabel: '語速：',
+        volumeLabel: '音量：',
+        voiceLabel: '語音：',
+        voiceDefault: '系統預設',
+        languageLabel: '語言：',
+        footerText: '本應用程式使用瀏覽器內建的文字轉語音技術',
+        status_welcome: '歡迎使用！請輸入文字以開始轉換。',
+        status_empty_text: '請先輸入要轉換的文字。',
+        status_resumed: '繼續播放。',
+        status_playing: '開始播放。',
+        status_finished: '播放完成。',
+        status_error: '播放時發生錯誤: {error}',
+        status_paused: '已暫停。',
+        status_stopped: '已停止。',
+        status_unsupported: '您的瀏覽器不支援語音合成功能，請使用較新版本的瀏覽器。'
+    }
+};
+
 // 文字轉語音應用程式
 class TextToSpeechApp {
     constructor() {
+        if (!('speechSynthesis' in window)) {
+            this.handleUnsupportedBrowser();
+            return;
+        }
+    
         this.synthesis = window.speechSynthesis;
         this.currentUtterance = null;
         this.isPlaying = false;
@@ -11,11 +71,18 @@ class TextToSpeechApp {
         this.progressInterval = null;
         this.accumulatedPauseTime = 0;
         this.lastPauseTime = 0;
+        this.currentLang = 'zh-TW'; // Default language
         
         this.initializeElements();
         this.attachEventListeners();
         this.loadVoices();
         this.setupKeyboardShortcuts();
+
+        // Initialize language and voices
+        const savedLang = localStorage.getItem('tts-app-lang') || 'zh-TW';
+        this.setLanguage(savedLang);
+
+        this.showStatus('status_welcome', 'info');
     }
 
     initializeElements() {
@@ -29,6 +96,7 @@ class TextToSpeechApp {
         this.rateSlider = document.getElementById('rateSlider');
         this.volumeSlider = document.getElementById('volumeSlider');
         this.voiceSelect = document.getElementById('voiceSelect');
+        this.langSelect = document.getElementById('langSelect');
         
         // 進度元素
         this.progressBar = document.getElementById('progressBar');
@@ -45,13 +113,39 @@ class TextToSpeechApp {
         this.pauseBtn.addEventListener('click', () => this.pause());
         this.stopBtn.addEventListener('click', () => this.stop());
         
+        
         // 設定變更
         this.rateSlider.addEventListener('input', () => this.updateRate());
         this.volumeSlider.addEventListener('input', () => this.updateVolume());
         this.voiceSelect.addEventListener('change', () => this.updateVoice());
-        
+        this.langSelect.addEventListener('change', () => this.setLanguage(this.langSelect.value));
+
         // 語音合成事件
         this.synthesis.addEventListener('voiceschanged', () => this.loadVoices());
+    }
+
+    setLanguage(lang) {
+        if (!translations[lang]) return;
+
+        this.currentLang = lang;
+        document.documentElement.lang = lang;
+        localStorage.setItem('tts-app-lang', lang);
+        this.langSelect.value = lang;
+
+        const langPack = translations[lang];
+        document.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.dataset.langKey;
+            if (langPack[key]) {
+                if (el.placeholder !== undefined) {
+                    el.placeholder = langPack[key];
+                } else {
+                    el.textContent = langPack[key];
+                }
+            }
+        });
+
+        this.updateButtonStates();
+        this.loadVoices(); // Reload voices as their names might be localized
     }
 
     setupKeyboardShortcuts() {
@@ -78,39 +172,35 @@ class TextToSpeechApp {
     }
 
     loadVoices() {
+        
         const voices = this.synthesis.getVoices();
-        this.voiceSelect.innerHTML = '<option value="">系統預設</option>';
+        // In some browsers, getVoices is async, if it's empty, the 'voiceschanged' event will fire.
+        if (voices.length === 0) {
+            return;
+        }
+
+        const currentVoiceName = this.voiceSelect.value;
+        const langPack = translations[this.currentLang];
         
-        // 過濾中文語音
-        const chineseVoices = voices.filter(voice => 
-            voice.lang.startsWith('zh') || 
-            voice.lang.startsWith('cmn') ||
-            voice.name.includes('Chinese') ||
-            voice.name.includes('中文')
-        );
+        this.voiceSelect.innerHTML = `<option value="" data-lang-key="voiceDefault">${langPack.voiceDefault}</option>`;
         
-        chineseVoices.forEach(voice => {
+        voices.forEach(voice => {
             const option = document.createElement('option');
             option.value = voice.name;
             option.textContent = `${voice.name} (${voice.lang})`;
             this.voiceSelect.appendChild(option);
         });
         
-        // 如果沒有找到中文語音，顯示所有可用語音
-        if (chineseVoices.length === 0) {
-            voices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                this.voiceSelect.appendChild(option);
-            });
+        // Restore selection if possible
+        if (voices.some(v => v.name === currentVoiceName)) {
+            this.voiceSelect.value = currentVoiceName;
         }
     }
 
     play() {
         const text = this.textInput.value.trim();
         if (!text) {
-            this.showStatus('請先輸入要轉換的文字', 'error');
+            this.showStatus('status_empty_text', 'error');
             return;
         }
 
@@ -121,12 +211,14 @@ class TextToSpeechApp {
             this.lastPauseTime = 0;
             this.updateButtonStates();
             this.startProgressTracking();
-            this.showStatus('繼續播放', 'info');
+            this.showStatus('status_resumed', 'info');
             return;
         }
 
-        // 停止當前播放
-        this.synthesis.cancel();
+        // 停止當前播放 (如果有的話)
+        if (this.synthesis.speaking) {
+            this.synthesis.cancel();
+        }
         
         // 重置暫停時間累計
         this.accumulatedPauseTime = 0;
@@ -160,7 +252,7 @@ class TextToSpeechApp {
             this.startTime = Date.now();
             this.updateButtonStates();
             this.startProgressTracking();
-            this.showStatus('開始播放', 'success');
+            this.showStatus('status_playing', 'success');
         };
 
         this.currentUtterance.onend = () => {
@@ -169,7 +261,7 @@ class TextToSpeechApp {
             this.updateButtonStates();
             this.stopProgressTracking();
             this.progressBar.style.width = '100%';
-            this.showStatus('播放完成', 'info');
+            this.showStatus('status_finished', 'info');
         };
 
         this.currentUtterance.onerror = (event) => {
@@ -177,7 +269,7 @@ class TextToSpeechApp {
             this.isPaused = false;
             this.updateButtonStates();
             this.stopProgressTracking();
-            this.showStatus(`播放錯誤: ${event.error}`, 'error');
+            this.showStatus('status_error', 'error', { error: event.error });
         };
 
         // 開始播放
@@ -191,7 +283,7 @@ class TextToSpeechApp {
             this.lastPauseTime = Date.now();
             this.updateButtonStates();
             this.stopProgressTracking();
-            this.showStatus('已暫停', 'info');
+            this.showStatus('status_paused', 'info');
         }
     }
 
@@ -213,10 +305,10 @@ class TextToSpeechApp {
         this.stopBtn.disabled = !this.isPlaying && !this.isPaused;
         
         // 更新按鈕文字和圖示
-        if (this.isPaused) {
-            this.playBtn.innerHTML = '<span class="btn-icon">▶️</span> 繼續';
-        } else {
-            this.playBtn.innerHTML = '<span class="btn-icon">▶️</span> 播放';
+        const playBtnTextEl = this.playBtn.querySelector('[data-lang-key="playBtn"]');
+        if (playBtnTextEl) {
+            const langPack = translations[this.currentLang];
+            playBtnTextEl.textContent = this.isPaused ? langPack.resumeBtn : langPack.playBtn;
         }
     }
 
@@ -245,15 +337,9 @@ class TextToSpeechApp {
     }
 
     updateVoice() {
-        if (this.currentUtterance && this.isPlaying) {
-            const selectedVoice = this.voiceSelect.value;
-            if (selectedVoice) {
-                const voices = this.synthesis.getVoices();
-                const voice = voices.find(v => v.name === selectedVoice);
-                if (voice) {
-                    this.currentUtterance.voice = voice;
-                }
-            }
+        // Stop and restart with the new voice for immediate effect
+        if (this.isPlaying) {
+            this.play();
         }
     }
 
@@ -316,19 +402,44 @@ class TextToSpeechApp {
     resetProgress() {
         this.progressBar.style.width = '0%';
         this.currentTimeEl.textContent = '00:00';
-        this.totalTimeEl.textContent = '00:00';
+        //this.totalTimeEl.textContent = '00:00';
+        // Don't reset total time until a new play starts
     }
 
-    showStatus(message, type) {
+    showStatus(key, type, params = {}) {
+        const langPack = translations[this.currentLang];
+        let message = langPack[key] || key;
+        if (params.error) {
+            message = message.replace('{error}', params.error);
+        }
         this.statusMessage.textContent = message;
         this.statusMessage.className = `status-message ${type}`;
         this.statusMessage.style.display = 'block';
         
         // 3秒後自動隱藏
         setTimeout(() => {
-            this.statusMessage.style.display = 'none';
+            if (this.statusMessage.textContent === message) {
+                this.statusMessage.style.display = 'none';
+            }
         }, 3000);
     }
+
+    handleUnsupportedBrowser() {
+        const statusEl = document.getElementById('statusMessage');
+        // Try to guess browser language for a better message
+        const lang = navigator.language || navigator.userLanguage;
+        let message = translations.en.status_unsupported;
+        if (lang.startsWith('zh')) {
+            message = translations['zh-TW'].status_unsupported;
+        }
+        statusEl.textContent = message;
+        statusEl.className = 'status-message error';
+        statusEl.style.display = 'block';
+        
+        // 禁用所有控制項
+        document.querySelectorAll('.btn, input, select, textarea').forEach(el => el.disabled = true);
+    }
+
 }
 
 // 當頁面載入完成時初始化應用程式
@@ -338,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 顯示歡迎訊息
     setTimeout(() => {
         const statusEl = document.getElementById('statusMessage');
-        statusEl.textContent = '歡迎使用文字轉語音！請輸入文字後點擊播放。';
+        statusEl.textContent = 'Welcome, please input some text to speech';
         statusEl.className = 'status-message info';
         statusEl.style.display = 'block';
         
@@ -347,18 +458,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }, 1000);
 });
-
-// 處理瀏覽器相容性
-if (!('speechSynthesis' in window)) {
-    document.addEventListener('DOMContentLoaded', () => {
-        const statusEl = document.getElementById('statusMessage');
-        statusEl.textContent = '您的瀏覽器不支援語音合成功能，請使用較新版本的瀏覽器。';
-        statusEl.className = 'status-message error';
-        statusEl.style.display = 'block';
-        
-        // 禁用所有控制按鈕
-        document.getElementById('playBtn').disabled = true;
-        document.getElementById('pauseBtn').disabled = true;
-        document.getElementById('stopBtn').disabled = true;
-    });
-}

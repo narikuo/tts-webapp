@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文字轉語音 - TTS Reader</title>
+    <title data-lang-key="pageTitle">文字轉語音 - TTS Reader</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎤 文字轉語音</h1>
-            <p>將您的文字轉換為自然語音</p>
+            <h1 data-lang-key="headerTitle">🎤 文字轉語音</h1>
+            <p data-lang-key="headerSubtitle">將您的文字轉換為自然語音</p>
         </header>
 
         <main>
             <!-- 文字輸入區域 -->
             <div class="input-section">
-                <label for="textInput">輸入要轉換的文字：</label>
+                <label for="textInput" data-lang-key="textInputLabel">輸入要轉換的文字：</label>
                 <textarea 
                     id="textInput" 
-                    placeholder="請在此輸入或貼上您要轉換為語音的文字..."
+                    placeholder=""
+                    data-lang-key="textInputPlaceholder"
                     rows="8"
                 ></textarea>
             </div>
@@ -29,35 +30,42 @@
                 <div class="main-controls">
                     <button id="playBtn" class="btn btn-primary">
                         <span class="btn-icon">▶️</span>
-                        播放
+                        <span data-lang-key="playBtn">播放</span>
                     </button>
                     <button id="pauseBtn" class="btn btn-secondary" disabled>
                         <span class="btn-icon">⏸️</span>
-                        暫停
+                        <span data-lang-key="pauseBtn">暫停</span>
                     </button>
                     <button id="stopBtn" class="btn btn-danger" disabled>
                         <span class="btn-icon">⏹️</span>
-                        停止
+                        <span data-lang-key="stopBtn">停止</span>
                     </button>
                 </div>
 
                 <div class="settings">
                     <div class="setting-group">
-                        <label for="rateSlider">語速：</label>
+                        <label for="rateSlider" data-lang-key="rateLabel">語速：</label>
                         <input type="range" id="rateSlider" min="0.5" max="2" step="0.1" value="1">
                         <span id="rateValue">1.0x</span>
                     </div>
                     
                     <div class="setting-group">
-                        <label for="volumeSlider">音量：</label>
+                        <label for="volumeSlider" data-lang-key="volumeLabel">音量：</label>
                         <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
                         <span id="volumeValue">100%</span>
                     </div>
 
                     <div class="setting-group">
-                        <label for="voiceSelect">語音：</label>
+                        <label for="voiceSelect" data-lang-key="voiceLabel">語音：</label>
                         <select id="voiceSelect">
-                            <option value="">系統預設</option>
+                            <option value="" data-lang-key="voiceDefault">系統預設</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="langSelect" data-lang-key="languageLabel">語言：</label>
+                        <select id="langSelect">
+                            <option value="zh-TW">繁體中文</option>
+                            <option value="en">English</option>
                         </select>
                     </div>
                 </div>
@@ -78,7 +86,7 @@
         </main>
 
         <footer>
-            <p>使用瀏覽器內建的語音合成技術</p>
+            <p data-lang-key="footerText">本應用程式使用瀏覽器內建的文字轉語音技術</p>
         </footer>
     </div>
 
